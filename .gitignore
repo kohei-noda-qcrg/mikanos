@@ -1,0 +1,4 @@
+mnt/
+*.efi
+*.o
+memo.md
