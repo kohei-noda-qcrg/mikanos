@@ -2,3 +2,4 @@ mnt/
 *.efi
 *.o
 memo.md
+disk.img
