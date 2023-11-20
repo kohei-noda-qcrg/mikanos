@@ -3,3 +3,4 @@ mnt/
 *.o
 memo.md
 disk.img
+*.out
