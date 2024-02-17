@@ -4,3 +4,4 @@ mnt/
 memo.md
 disk.img
 *.out
+*.elf
