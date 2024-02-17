@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -eu
+
+script_dir=$(cd $(dirname $0); pwd)
+
+cd $HOME/edk2
+set +u
+. edksetup.sh
+set -u
+build
+$HOME/osbook/devenv/run_qemu.sh $HOME/edk2/Build/MikanLoaderX64/DEBUG_CLANG38/X64/Loader.efi
