@@ -262,10 +262,10 @@ EFI_STATUS EFIAPI UefiMain(
     // kernel_base_addr + 24 position data is a pointer to the KernelMain function
     UINT64 entry_addr = *(UINT64 *)(kernel_base_addr + 24);
 
-    typedef void EntryPointType(void); // Function prototype
+    typedef void EntryPointType(UINT64, UINT64); // Function prototype
     // shorthand code to call KernelMain function ((EntryPointType*)entry_addr)();
     EntryPointType *entry_point = (EntryPointType *)entry_addr;
-    entry_point(); // Call KernelMain function
+    entry_point(gop->Mode->FrameBufferBase, gop->Mode->FrameBufferSize); // Call KernelMain function
     // #@@range_end(call_kernel)
 
     Print(L"All done\n");
