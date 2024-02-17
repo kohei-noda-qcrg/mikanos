@@ -1,3 +1,8 @@
 {
-    "github.copilot.editor.enableAutoCompletions": false
+    "github.copilot.editor.enableAutoCompletions": false,
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/**",
+        "${HOME}/edk2/MdePkg/Include/X64",
+        "${HOME}/edk2/MdePkg/Include",
+    ],
 }
