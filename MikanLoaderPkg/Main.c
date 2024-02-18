@@ -1,3 +1,4 @@
+#include <stdalign.h>
 #include <Uefi.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiBootServicesTableLib.h>
@@ -222,7 +223,7 @@ EFI_STATUS EFIAPI UefiMain(
     EFI_FILE_PROTOCOL *kernel_file;
     root_dir->Open(root_dir, &kernel_file, L"\\kernel.elf", EFI_FILE_MODE_READ, 0);
     UINTN file_info_size = sizeof(EFI_FILE_INFO) + sizeof(CHAR16) * 12; // sizeof(CHAR16) * 12 = \kernel.flf\0
-    UINT8 file_info_buffer[file_info_size];
+    alignas(alignof(EFI_FILE_INFO)) UINT8 file_info_buffer[file_info_size];
     kernel_file->GetInfo(kernel_file, &gEfiSimpleFileSystemProtocolGuid, &file_info_size, file_info_buffer);
 
     EFI_FILE_INFO *file_info = (EFI_FILE_INFO *)file_info_buffer;
