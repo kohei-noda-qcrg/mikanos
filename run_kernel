@@ -8,5 +8,8 @@ cd ~/edk2
 set +u
 . edksetup.sh
 set -u
+sed -i -e 's/^ACTIVE_PLATFORM[[:space:]]*=[[:space:]]EmulatorPkg\/EmulatorPkg\.dsc/ACTIVE_PLATFORM        = MikanLoaderPkg\/MikanLoaderPkg.dsc/' \
+-e 's/^TARGET_ARCH[[:space:]]*=[[:space:]]IA32/TARGET_ARCH          = X64/' \
+-e 's/^TOOL_CHAIN_TAG[[:space:]]*=[[:space:]]VS2015x86/TOOL_CHAIN_TAG      = CLANG38/' ~/edk2/Conf/target.txt
 build
 ~/osbook/devenv/run_qemu.sh ~/edk2/Build/MikanLoaderX64/DEBUG_CLANG38/X64/Loader.efi ~/workspace/mikanos/kernel/kernel.elf
