@@ -255,7 +255,8 @@ EFI_STATUS EFIAPI UefiMain(
     CheckStatus(status, L"Failed to open file '\\kernel.elf':");
     UINTN file_info_size = sizeof(EFI_FILE_INFO) + sizeof(CHAR16) * 12; // sizeof(CHAR16) * 12 = \kernel.flf\0
     alignas(alignof(EFI_FILE_INFO)) UINT8 file_info_buffer[file_info_size];
-    kernel_file->GetInfo(kernel_file, &gEfiSimpleFileSystemProtocolGuid, &file_info_size, file_info_buffer);
+    status = kernel_file->GetInfo(kernel_file, &gEfiFileInfoGuid, &file_info_size, file_info_buffer);
+    CheckStatus(status, L"failed to get file information");
 
     EFI_FILE_INFO *file_info = (EFI_FILE_INFO *)file_info_buffer;
     UINTN kernel_file_size = file_info->FileSize;
