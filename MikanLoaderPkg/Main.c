@@ -144,20 +144,25 @@ EFI_STATUS OpenRootDir(EFI_HANDLE image_handle, EFI_FILE_PROTOCOL **root)
 
 EFI_STATUS OpenGOP(EFI_HANDLE image_handle, EFI_GRAPHICS_OUTPUT_PROTOCOL **gop)
 {
+    EFI_STATUS status;
     UINTN num_gop_handles = 0;
     EFI_HANDLE *gop_handles = NULL;
-    gBS->LocateHandleBuffer(ByProtocol,
-                            &gEfiGraphicsOutputProtocolGuid,
-                            NULL,
-                            &num_gop_handles,
-                            &gop_handles);
+    status = gBS->LocateHandleBuffer(ByProtocol,
+                                     &gEfiGraphicsOutputProtocolGuid,
+                                     NULL,
+                                     &num_gop_handles,
+                                     &gop_handles);
+    if (EFI_ERROR(status))
+        return status;
 
-    gBS->OpenProtocol(gop_handles[0],
-                      &gEfiGraphicsOutputProtocolGuid,
-                      (VOID **)gop,
-                      image_handle,
-                      NULL,
-                      EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+    status = gBS->OpenProtocol(gop_handles[0],
+                               &gEfiGraphicsOutputProtocolGuid,
+                               (VOID **)gop,
+                               image_handle,
+                               NULL,
+                               EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+    if (EFI_ERROR(status))
+        return status;
 
     FreePool(gop_handles);
 
@@ -267,7 +272,8 @@ EFI_STATUS EFIAPI UefiMain(
     // 0xfff is for the treatment of fractions
     status = gBS->AllocatePages(AllocateAddress, EfiLoaderData, (kernel_file_size + 0xfff) / 0x1000, &kernel_base_addr);
     CheckStatus(status, L"Failed to allocate pages for the kernel");
-    kernel_file->Read(kernel_file, &kernel_file_size, (VOID *)kernel_base_addr);
+    status = kernel_file->Read(kernel_file, &kernel_file_size, (VOID *)kernel_base_addr);
+    CheckStatus(status, L"Faied to read the kernel file");
     Print(L"Kernel: 0x%0lx (%lu bytes)\n", kernel_base_addr, kernel_file_size);
     // #@@range_end(read_kernel)
 
