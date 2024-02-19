@@ -15,5 +15,12 @@ clean:
 kernel.elf: $(OBJS) Makefile
 	ld.lld $(LDFLAGS) -o kernel.elf $(OBJS)
 
+# % -> stem
 %.o: %.cpp Makefile
 	clang++ $(CPPFLAGS) $(CXXFLAGS) -c $<
+
+# Variables automatically set by make
+# $< -> first prerequisite
+# $^ -> all prerequisites with whitespace
+# $@ -> target (including path)
+# $# -> stem (e.g. a.%.b: dir/a.c.b -> dir/c)
