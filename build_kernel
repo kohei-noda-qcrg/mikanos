@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -eu
+
+script_dir=$(cd $(dirname $0); pwd)
+
+. ~/osbook/devenv/buildenv.sh
+make -C $script_dir/kernel
