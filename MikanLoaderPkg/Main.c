@@ -9,6 +9,7 @@
 #include <Protocol/DiskIo2.h>
 #include <Protocol/BlockIo.h>
 #include <Guid/FileInfo.h>
+#include "frame_buffer_config.hpp"
 
 // #@@range_begin(struct_memory_map)
 struct MemoryMap
@@ -301,11 +302,28 @@ EFI_STATUS EFIAPI UefiMain(
     // #@@range_begin(call_kernel)
     // kernel_base_addr + 24 position data is a pointer to the KernelMain function
     UINT64 entry_addr = *(UINT64 *)(kernel_base_addr + 24);
-
-    typedef void EntryPointType(UINT64, UINT64); // Function prototype
-    // shorthand code to call KernelMain function is ((EntryPointType*)entry_addr)();
+    struct FrameBufferConfig config = {
+        (UINT8 *)gop->Mode->FrameBufferBase,
+        gop->Mode->Info->PixelsPerScanLine,
+        gop->Mode->Info->HorizontalResolution,
+        gop->Mode->Info->VerticalResolution,
+        0};
+    switch (gop->Mode->Info->PixelFormat)
+    {
+    case PixelRedGreenBlueReserved8BitPerColor:
+        config.pixel_format = kPixelRGBResv8BitPerColor;
+        break;
+    case PixelBlueGreenRedReserved8BitPerColor:
+        config.pixel_format = kPixelBGRResv8BitPerColor;
+        break;
+    default:
+        Print(L"Unimplemented pixel format: %d\n", gop->Mode->Info->PixelFormat);
+        Halt();
+    }
+    typedef void EntryPointType(const struct FrameBufferConfig*); // Function prototype
+    // shorthand code to call KernelMain function is ((EntryPointType*)entry_addr)(&config);
     EntryPointType *entry_point = (EntryPointType *)entry_addr;
-    entry_point(gop->Mode->FrameBufferBase, gop->Mode->FrameBufferSize); // Call KernelMain function
+    entry_point(&config); // Call KernelMain function
     // #@@range_end(call_kernel)
 
     Print(L"All done\n");
