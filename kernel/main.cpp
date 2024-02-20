@@ -75,6 +75,22 @@ public:
     }
 };
 
+void WriteASCii(PixelWriter &writer, int x, int y, char c, const PixelColor &color)
+{
+    if (c != 'A')
+        return;
+    for (int dy = 0; dy < 16; ++dy)
+        for (int dx = 0; dx < 8; ++dx)
+        {
+            // kFontA[dy] << dx => row: dy, column: dx
+            // - 0x80u
+            //   - u: unsigned int
+            //   - 0x80: 0b1000 0000 => only the top bit is 1
+            if ((kFontA[dy] << dx) & 0x80u) // Whether the kFontA[dy][dx] bit is 1 or not
+                writer.Write(x + dx, y + dy, color);
+        }
+}
+
 void *operator new(size_t size, void *buf)
 {
     return buf;
@@ -104,6 +120,9 @@ extern "C" void KernelMain(const FrameBufferConfig &frame_buffer_config)
     for (int x = 0; x < 200; ++x)
         for (int y = 0; y < 100; ++y)
             pixel_writer->Write(x, y, {0, 255, 0});
+
+    WriteASCii(*pixel_writer, 50, 50, 'A', {0, 0, 0});
+    WriteASCii(*pixel_writer, 58, 50, 'A', {0, 0, 0});
     while (1)
         __asm__("hlt");
 }
