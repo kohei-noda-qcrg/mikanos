@@ -13,7 +13,6 @@
 #include "frame_buffer_config.hpp"
 #include "elf.hpp"
 
-// #@@range_begin(struct_memory_map)
 struct MemoryMap
 {
     UINTN buffer_size;
@@ -23,9 +22,7 @@ struct MemoryMap
     UINTN descriptor_size;
     UINT32 descriptor_version;
 };
-// #@@range_end(struct_memory_map)
 
-// #@@range_begin(get_memory_map)
 EFI_STATUS GetMemoryMap(struct MemoryMap *map)
 {
     if (map->buffer == NULL)
@@ -41,9 +38,7 @@ EFI_STATUS GetMemoryMap(struct MemoryMap *map)
         &map->descriptor_size,
         &map->descriptor_version);
 }
-// #@@range_end(get_memory_map)
 
-// #@@range_begin(get_memory_type)
 const CHAR16 *GetMemoryTypeUnicode(EFI_MEMORY_TYPE type)
 {
     switch (type)
@@ -84,9 +79,7 @@ const CHAR16 *GetMemoryTypeUnicode(EFI_MEMORY_TYPE type)
         return L"InvalidMemoryType";
     }
 }
-// #@@range_end(get_memory_type)
 
-// #@@range_begin(save_memory_map)
 EFI_STATUS SaveMemoryMap(struct MemoryMap *map, EFI_FILE_PROTOCOL *file)
 {
     CHAR8 buf[256];
@@ -117,7 +110,6 @@ EFI_STATUS SaveMemoryMap(struct MemoryMap *map, EFI_FILE_PROTOCOL *file)
 
     return EFI_SUCCESS;
 }
-// #@@range_end(save_memory_map)
 
 EFI_STATUS OpenRootDir(EFI_HANDLE image_handle, EFI_FILE_PROTOCOL **root)
 {
@@ -273,7 +265,6 @@ EFI_STATUS EFIAPI UefiMain(
         CheckStatus(status, L"Failed to close memory map file");
     }
 
-    // #@@range_begin(gop)
     EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
     status = OpenGOP(image_handle, &gop);
     CheckStatus(status, L"Failed to open GOP");
@@ -292,9 +283,7 @@ EFI_STATUS EFIAPI UefiMain(
     {
         frame_buffer[i] = 255; // white
     }
-    // #@@range_end(gop)
 
-    // #@@range_begin(read_kernel)
     EFI_FILE_PROTOCOL *kernel_file;
     status = root_dir->Open(root_dir, &kernel_file, L"\\kernel.elf", EFI_FILE_MODE_READ, 0);
     CheckStatus(status, L"Failed to open file '\\kernel.elf':");
@@ -314,9 +303,7 @@ EFI_STATUS EFIAPI UefiMain(
     CheckStatus(status, L"Failed to allocate pool");
     status = kernel_file->Read(kernel_file, &kernel_file_size, kernel_buffer);
     CheckStatus(status, L"Failed to read the kernel file");
-    // #@@range_end(read_kernel)
 
-    // #@@range_begin(alloc_pages)
     Elf64_Ehdr *kernel_ehdr = (Elf64_Ehdr *)kernel_buffer;
     UINT64 kernel_first_addr, kernel_last_addr;
     CalcLoadAddressRange(kernel_ehdr, &kernel_first_addr, &kernel_last_addr);
@@ -325,17 +312,13 @@ EFI_STATUS EFIAPI UefiMain(
     UINTN num_pages = (kernel_last_addr - kernel_first_addr + 0xfff) / 0x1000;
     status = gBS->AllocatePages(AllocateAddress, EfiLoaderData, num_pages, &kernel_first_addr);
     CheckStatus(status, L"Failed to alllocate pages");
-    // #@@range_end(alloc_pages)
 
-    // #@@range_begin(copy_segments)
     CopyLoadSegments(kernel_ehdr);
     Print(L"Kernel: 0x%0lx - 0x%0lx\n", kernel_first_addr, kernel_last_addr);
 
     status = gBS->FreePool(kernel_buffer);
     CheckStatus(status, L"Faild to free pool");
-    // #@@range_end(copy_segments)
 
-    // #@@range_begin(exit_bs)
     status = gBS->ExitBootServices(image_handle, memmap.map_key);
     if (EFI_ERROR(status))
     {
@@ -354,9 +337,7 @@ EFI_STATUS EFIAPI UefiMain(
                 ;
         }
     }
-    // #@@range_end(exit_bs)
 
-    // #@@range_begin(call_kernel)
     // kernel_first_addr + 24 position data is a pointer to the KernelMain function
     UINT64 entry_addr = *(UINT64 *)(kernel_first_addr + 24);
     struct FrameBufferConfig config = {
@@ -381,7 +362,6 @@ EFI_STATUS EFIAPI UefiMain(
     // shorthand code to call KernelMain function is ((EntryPointType*)entry_addr)(&config);
     EntryPointType *entry_point = (EntryPointType *)entry_addr;
     entry_point(&config); // Call KernelMain function
-    // #@@range_end(call_kernel)
 
     Print(L"All done\n");
     while (1)
