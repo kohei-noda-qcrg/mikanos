@@ -1,5 +1,6 @@
 #include <stdalign.h>
 #include <Uefi.h>
+#include <Library/BaseMemoryLib.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/PrintLib.h>
@@ -10,6 +11,7 @@
 #include <Protocol/BlockIo.h>
 #include <Guid/FileInfo.h>
 #include "frame_buffer_config.hpp"
+#include "elf.hpp"
 
 // #@@range_begin(struct_memory_map)
 struct MemoryMap
@@ -187,6 +189,42 @@ const CHAR16 *GetPixelFormatUnicode(EFI_GRAPHICS_PIXEL_FORMAT fmt)
     }
 }
 
+Elf64_Phdr *CalcPhdrFromEhdr(Elf64_Ehdr *ehdr)
+{
+    return (Elf64_Phdr *)((UINT64)ehdr + ehdr->e_phoff);
+}
+
+void CalcLoadAddressRange(Elf64_Ehdr *ehdr, UINT64 *first, UINT64 *last)
+{
+    Elf64_Phdr *phdr = CalcPhdrFromEhdr(ehdr);
+    *first = MAX_UINT64;
+    *last = 0;
+    for (Elf64_Half i = 0; i < ehdr->e_phnum; ++i)
+    {
+        if (phdr[i].p_type != PT_LOAD)
+            continue; // If the current segment is not a LOAD segment, skip it
+        *first = MIN(*first, phdr[i].p_vaddr);
+        *last = MAX(*last, phdr[i].p_vaddr + phdr[i].p_memsz);
+    }
+};
+
+void CopyLoadSegments(Elf64_Ehdr *ehdr)
+{
+    Elf64_Phdr *phdr = CalcPhdrFromEhdr(ehdr);
+    for (Elf64_Half i = 0; i < ehdr->e_phnum; ++i)
+    {
+        if (phdr[i].p_type != PT_LOAD)
+            continue;
+
+        UINT64 segment_in_file = (UINT64)ehdr + phdr[i].p_offset;
+        CopyMem((VOID *)phdr[i].p_vaddr, (VOID *)segment_in_file, phdr[i].p_filesz);
+
+        // Fill 0
+        UINTN remain_bytes = phdr[i].p_memsz - phdr[i].p_filesz;
+        SetMem((VOID *)(phdr[i].p_vaddr + phdr[i].p_filesz), remain_bytes, 0);
+    }
+}
+
 void Halt(void)
 {
     while (1)
@@ -268,15 +306,34 @@ EFI_STATUS EFIAPI UefiMain(
     EFI_FILE_INFO *file_info = (EFI_FILE_INFO *)file_info_buffer;
     UINTN kernel_file_size = file_info->FileSize;
 
-    EFI_PHYSICAL_ADDRESS kernel_base_addr = 0x100000;
-    // UEFI 1 page = 4KiB = 0x1000
-    // 0xfff is for the treatment of fractions
-    status = gBS->AllocatePages(AllocateAddress, EfiLoaderData, (kernel_file_size + 0xfff) / 0x1000, &kernel_base_addr);
-    CheckStatus(status, L"Failed to allocate pages for the kernel");
-    status = kernel_file->Read(kernel_file, &kernel_file_size, (VOID *)kernel_base_addr);
-    CheckStatus(status, L"Faied to read the kernel file");
-    Print(L"Kernel: 0x%0lx (%lu bytes)\n", kernel_base_addr, kernel_file_size);
+    VOID *kernel_buffer;
+    // Allocate a temporary memory to store the kernel file data
+    // gBS->AllocatePool allocates memory in byte units
+    // gBS->AllocatePool stores the top addr of the allocated memory area into kernel_buffer
+    status = gBS->AllocatePool(EfiLoaderData, kernel_file_size, &kernel_buffer);
+    CheckStatus(status, L"Failed to allocate pool");
+    status = kernel_file->Read(kernel_file, &kernel_file_size, kernel_buffer);
+    CheckStatus(status, L"Failed to read the kernel file");
     // #@@range_end(read_kernel)
+
+    // #@@range_begin(alloc_pages)
+    Elf64_Ehdr *kernel_ehdr = (Elf64_Ehdr *)kernel_buffer;
+    UINT64 kernel_first_addr, kernel_last_addr;
+    CalcLoadAddressRange(kernel_ehdr, &kernel_first_addr, &kernel_last_addr);
+
+    // 0xfff is for the treatment of fractions
+    UINTN num_pages = (kernel_last_addr - kernel_first_addr + 0xfff) / 0x1000;
+    status = gBS->AllocatePages(AllocateAddress, EfiLoaderData, num_pages, &kernel_first_addr);
+    CheckStatus(status, L"Failed to alllocate pages");
+    // #@@range_end(alloc_pages)
+
+    // #@@range_begin(copy_segments)
+    CopyLoadSegments(kernel_ehdr);
+    Print(L"Kernel: 0x%0lx - 0x%0lx\n", kernel_first_addr, kernel_last_addr);
+
+    status = gBS->FreePool(kernel_buffer);
+    CheckStatus(status, L"Faild to free pool");
+    // #@@range_end(copy_segments)
 
     // #@@range_begin(exit_bs)
     status = gBS->ExitBootServices(image_handle, memmap.map_key);
@@ -300,8 +357,8 @@ EFI_STATUS EFIAPI UefiMain(
     // #@@range_end(exit_bs)
 
     // #@@range_begin(call_kernel)
-    // kernel_base_addr + 24 position data is a pointer to the KernelMain function
-    UINT64 entry_addr = *(UINT64 *)(kernel_base_addr + 24);
+    // kernel_first_addr + 24 position data is a pointer to the KernelMain function
+    UINT64 entry_addr = *(UINT64 *)(kernel_first_addr + 24);
     struct FrameBufferConfig config = {
         (UINT8 *)gop->Mode->FrameBufferBase,
         gop->Mode->Info->PixelsPerScanLine,
@@ -320,7 +377,7 @@ EFI_STATUS EFIAPI UefiMain(
         Print(L"Unimplemented pixel format: %d\n", gop->Mode->Info->PixelFormat);
         Halt();
     }
-    typedef void EntryPointType(const struct FrameBufferConfig*); // Function prototype
+    typedef void EntryPointType(const struct FrameBufferConfig *); // Function prototype
     // shorthand code to call KernelMain function is ((EntryPointType*)entry_addr)(&config);
     EntryPointType *entry_point = (EntryPointType *)entry_addr;
     entry_point(&config); // Call KernelMain function
