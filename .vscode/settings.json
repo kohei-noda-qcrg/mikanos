@@ -5,4 +5,12 @@
         "${HOME}/edk2/MdePkg/Include/X64",
         "${HOME}/edk2/MdePkg/Include",
     ],
+    "files.associations": {
+        "cstdint": "cpp",
+        "cstdio": "cpp",
+        "diskio2.h": "c",
+        "frame_buffer_config.hpp": "cpp",
+        "type_traits": "c",
+        "uefi.h": "c",
+    },
 }
