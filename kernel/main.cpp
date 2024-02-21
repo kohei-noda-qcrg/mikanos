@@ -14,6 +14,34 @@ void *operator new(size_t size, void *buf)
 void operator delete(void *obj) noexcept
 {
 }
+const int kMouseCursorWidth = 15;
+const int kMouseCursorHeight = 24;
+const char mouse_cursor_shape[kMouseCursorHeight][kMouseCursorWidth + 1] = {
+    "@              ",
+    "@@             ",
+    "@.@            ",
+    "@..@           ",
+    "@...@          ",
+    "@....@         ",
+    "@.....@        ",
+    "@......@       ",
+    "@.......@      ",
+    "@........@     ",
+    "@.........@    ",
+    "@..........@   ",
+    "@...........@  ",
+    "@............@ ",
+    "@......@@@@@@@@",
+    "@......@       ",
+    "@....@@.@      ",
+    "@...@ @.@      ",
+    "@..@   @.@     ",
+    "@.@    @.@     ",
+    "@@      @.@    ",
+    "@       @.@    ",
+    "         @.@   ",
+    "         @@@   ",
+};
 
 char pixel_writer_buf[sizeof(RGBResv8BitPerColorPixelWriter)];
 PixelWriter *pixel_writer;
@@ -55,6 +83,19 @@ extern "C" void KernelMain(const FrameBufferConfig &frame_buffer_config)
     {
         printk("printk: %d\n", i);
     }
+
+    for (int dy = 0; dy < kMouseCursorHeight; ++dy)
+        for (int dx = 0; dx < kMouseCursorWidth; ++dx)
+        {
+            if (mouse_cursor_shape[dy][dx] == '@')
+            {
+                pixel_writer->Write(200 + dx, 100 + dy, {0, 0, 0});
+            }
+            else if (mouse_cursor_shape[dy][dx] == '.')
+            {
+                pixel_writer->Write(200 + dx, 100 + dy, {255, 255, 255});
+            }
+        }
 
     while (1)
         __asm__("hlt");
