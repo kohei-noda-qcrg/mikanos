@@ -4,7 +4,6 @@
 #include "graphics.hpp"
 #include "font.hpp"
 
-
 void *operator new(size_t size, void *buf)
 {
     return buf;
@@ -35,8 +34,11 @@ extern "C" void KernelMain(const FrameBufferConfig &frame_buffer_config)
         for (int y = 0; y < 100; ++y)
             pixel_writer->Write(x, y, {0, 255, 0});
 
-    WriteASCii(*pixel_writer, 50, 50, 'A', {0, 0, 0});
-    WriteASCii(*pixel_writer, 58, 50, 'A', {0, 0, 0});
+    int i = 0;
+    for (char c = '!'; c <= '~'; ++c, ++i)
+    {
+        WriteASCii(*pixel_writer, 8 * i, 50, c, {0, 0, 0});
+    }
     while (1)
         __asm__("hlt");
 }
