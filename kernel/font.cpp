@@ -27,3 +27,11 @@ void WriteASCii(PixelWriter &writer, int x, int y, char c, const PixelColor &col
                 writer.Write(x + dx, y + dy, color);
         }
 }
+
+void WriteString(PixelWriter &writer, int x, int y, const char *s, const PixelColor &color)
+{
+    for (int i = 0; s[i] != '\0'; ++i)
+    {
+        WriteASCii(writer, x + 8 * i, y, s[i], color);
+    }
+}

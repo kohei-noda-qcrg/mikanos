@@ -39,6 +39,7 @@ extern "C" void KernelMain(const FrameBufferConfig &frame_buffer_config)
     {
         WriteASCii(*pixel_writer, 8 * i, 50, c, {0, 0, 0});
     }
+    WriteString(*pixel_writer, 0, 66, "Hello, world!", {0, 0, 255});
     while (1)
         __asm__("hlt");
 }
