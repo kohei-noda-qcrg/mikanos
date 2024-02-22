@@ -20,11 +20,11 @@ namespace
     Error AddDevice(const Device &device)
     {
         if (num_device == devices.size())
-            return Error::kFull;
+            return MAKE_ERROR(Error::kFull);
 
         devices[num_device] = device;
         ++num_device;
-        return Error::kSuccess;
+        return MAKE_ERROR(Error::kSuccess);
     }
 
     Error ScanBus(uint8_t bus);
@@ -44,7 +44,7 @@ namespace
             uint8_t secondary_bus = (bus_numbers >> 8) & 0xffu;
             return ScanBus(secondary_bus);
         }
-        return Error::kSuccess;
+        return MAKE_ERROR(Error::kSuccess);
     }
 
     Error ScanDevice(uint8_t bus, uint8_t device)
@@ -52,7 +52,7 @@ namespace
         if (auto err = ScanFunction(bus, device, 0))
             return err;
         if (IsSingleFunctionDevice(ReadHeaderType(bus, device, 0)))
-            return Error::kSuccess;
+            return MAKE_ERROR(Error::kSuccess);
 
         for (uint8_t function = 1; function < 8; ++function)
         {
@@ -61,7 +61,7 @@ namespace
             if (auto err = ScanFunction(bus, device, function))
                 return err;
         }
-        return Error::kSuccess;
+        return MAKE_ERROR(Error::kSuccess);
     }
 
     Error ScanBus(uint8_t bus)
@@ -76,7 +76,7 @@ namespace
                 return err;
             }
         }
-        return Error::kSuccess;
+        return MAKE_ERROR(Error::kSuccess);
     }
 
 }
@@ -154,6 +154,6 @@ namespace pci
             if (auto err = ScanBus(function))
                 return err;
         }
-        return Error::kSuccess;
+        return MAKE_ERROR(Error::kSuccess);
     }
 }
