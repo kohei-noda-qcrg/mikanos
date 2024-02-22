@@ -5,6 +5,8 @@ set -eu
 script_dir=$(cd $(dirname $0); pwd)
 
 cd ~/edk2
+rm -rf MikanLoaderPkg
+ln -s ~/workspace/mikanos/MikanLoaderPkg .
 set +u
 . edksetup.sh
 set -u
