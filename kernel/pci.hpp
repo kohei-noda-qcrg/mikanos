@@ -44,19 +44,18 @@ namespace pci
 
     /** @brief Read the vendor ID register (for All header type)*/
     uint16_t ReadVendorId(uint8_t bus, uint8_t device, uint8_t function);
+    inline uint16_t ReadVendorId(const Device &dev) { return ReadVendorId(dev.bus, dev.device, dev.function); }
     /** @brief Read the device ID register (for All header type)*/
     uint16_t ReadDeviceId(uint8_t bus, uint8_t device, uint8_t function);
     /** @brief Read the header type register (for All header type)*/
     uint8_t ReadHeaderType(uint8_t bus, uint8_t device, uint8_t function);
-    /** @brief Read the class code register (for All header type)
-     *
-     * The following is the structure of the returned 32-bit integer
-     *   - 32:24 : Base class
-     *   - 23:16 : Sub class
-     *   - 15:8  : Interface
-     *   - 7:0   : Revision ID
-     */
+
     ClassCode ReadClassCode(uint8_t bus, uint8_t device, uint8_t function);
+
+    /** @brief Read a 32 bit register for the specified PCI device.*/
+    uint32_t ReadConfReg(const Device &dev, uint8_t reg_addr);
+
+    void WriteConfReg(const Device &dev, uint8_t reg_addr, uint32_t value);
 
     /** @brief Read the bus number register (for header type 1)
      *
@@ -81,4 +80,11 @@ namespace pci
      * Then set the number of devices found to num_devices
      */
     Error ScanAllBus();
+
+    constexpr uint8_t CalcBarAddress(unsigned int bar_index)
+    {
+        return 0x10 + 4 * bar_index;
+    }
+
+    WithError<uint64_t> ReadBar(Device &device, unsigned int bar_index);
 }
