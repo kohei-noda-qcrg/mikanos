@@ -56,7 +56,7 @@ namespace pci
      *   - 15:8  : Interface
      *   - 7:0   : Revision ID
      */
-    uint32_t ReadClassCode(uint8_t bus, uint8_t device, uint8_t function);
+    ClassCode ReadClassCode(uint8_t bus, uint8_t device, uint8_t function);
 
     /** @brief Read the bus number register (for header type 1)
      *
