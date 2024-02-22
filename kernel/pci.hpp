@@ -11,6 +11,30 @@ namespace pci
     /** @brief CONFIG_DATA register I/O port address*/
     const uint16_t kConfigData = 0x0cfc;
 
+    /** @brief Class code for PCI device*/
+    struct ClassCode
+    {
+        uint8_t base, sub, interface;
+
+        /** @brief Returns true when 2 base classes are equivalent.*/
+        bool Match(uint8_t b) { return b == base; }
+        /** @brief Returns true when 2 base classes and sub classes are equivalent.*/
+        bool Match(uint8_t b, uint8_t s) { return Match(b) && s == sub; }
+        /** @brief Returns true when 2 base classes and sub classes and interfaces are equivalent.*/
+        bool Match(uint8_t b, uint8_t s, uint8_t i) { return Match(b, s) && i == interface; }
+    };
+
+    /** @brief Store the basic data to oparate a PCI device.
+     *
+     * bus, device, function are required to specify the device.
+     *
+     */
+    struct Device
+    {
+        uint8_t bus, device, function, header_type;
+        ClassCode class_code;
+    };
+
     /** @brief Write specified integer to kConfigAddress*/
     void WriteAddress(uint32_t address);
     /** @brief Write specified integer to kConfigData*/
@@ -45,16 +69,6 @@ namespace pci
 
     /** @brief Returns true for a single function*/
     bool IsSingleFunctionDevice(uint8_t header_type);
-
-    /** @brief Store the basic data to oparate a PCI device
-     *
-     * bus, device, function are required to specify the device.
-     *
-     */
-    struct Device
-    {
-        uint8_t bus, device, function, header_type;
-    };
 
     /** @brief All PCI devices found by the ScanAllBus() function*/
     inline std::array<Device, 32> devices;
